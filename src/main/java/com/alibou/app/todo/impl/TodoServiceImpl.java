@@ -84,6 +84,6 @@ public class TodoServiceImpl implements TodoService {
 
     private Category checkAndReturnCategory(final String categoryId, final String userId) {
         return this.categoryRepository.findByIdAndUserId(categoryId, userId)
-                                      .orElseThrow(() -> new EntityNotFoundException("No category was found for that user with id" + categoryId));
+                                      .orElseThrow(() -> new EntityNotFoundException("No category was found for that user with id " + categoryId));
     }
 }

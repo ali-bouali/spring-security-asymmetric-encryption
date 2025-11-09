@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>TaskFlow - Your Smart Todo App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --bg-light: #f7fafc;
+            --white: #ffffff;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            width: 100%;
+            top: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #667eea;
+        }
+
+        .cta-button {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 80px;
+            padding: 4rem 2rem;
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            opacity: 0.1;
+            top: -200px;
+            right: -200px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(180deg);
+            }
+        }
+
+        .hero-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            z-index: 1;
+            position: relative;
+        }
+
+        .hero-content h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeInUp 1s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            margin-bottom: 2rem;
+            animation: fadeInUp 1s ease 0.2s both;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            animation: fadeInUp 1s ease 0.4s both;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.3s, box-shadow 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text-dark);
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            text-decoration: none;
+            display: inline-block;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-3px);
+        }
+
+        .hero-image {
+            position: relative;
+            animation: fadeInUp 1s ease 0.6s both;
+        }
+
+        .app-mockup {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            transform: rotate(-5deg);
+            transition: transform 0.3s;
+        }
+
+        .app-mockup:hover {
+            transform: rotate(0deg);
+        }
+
+        .mockup-header {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot:nth-child(1) {
+            background: #ff5f57;
+        }
+
+        .dot:nth-child(2) {
+            background: #ffbd2e;
+        }
+
+        .dot:nth-child(3) {
+            background: #28ca42;
+        }
+
+        .task-item {
+            background: var(--bg-light);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+        }
+
+        .checkbox.checked {
+            background: var(--primary-gradient);
+            position: relative;
+        }
+
+        .checkbox.checked::after {
+            content: '✓';
+            color: white;
+            position: absolute;
+            top: -2px;
+            left: 3px;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 5rem 2rem;
+            background: white;
+        }
+
+        .features-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-align: center;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+
+        .feature-card p {
+            color: var(--text-light);
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 5rem 2rem;
+            background: var(--bg-light);
+        }
+
+        .steps-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 5rem 2rem;
+            background: var(--primary-gradient);
+            text-align: center;
+            color: white;
+        }
+
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .cta-section .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 2rem 2rem;
+            background: var(--text-dark);
+            color: white;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            list-style: none;
+        }
+
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+        }
+
+        /* Mobile Menu Toggle */
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+        }
+
+        .menu-toggle span {
+            width: 25px;
+            height: 3px;
+            background: var(--text-dark);
+            margin: 3px 0;
+            transition: 0.3s;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .menu-toggle {
+                display: flex;
+            }
+
+            .hero-container {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .hero-image {
+                display: none;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .steps-container {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-section h2 {
+                font-size: 1.8rem;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            nav {
+                padding: 1rem;
+            }
+
+            .hero {
+                padding: 2rem 1rem;
+            }
+
+            .btn-primary, .btn-secondary {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Navigation -->
+<nav>
+    <div class="nav-container">
+        <div class="logo">✓ TaskFlow</div>
+        <ul class="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a class="cta-button" href="#">Get Started</a></li>
+        </ul>
+        <div class="menu-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-container">
+        <div class="hero-content">
+            <h1>Organize Your Life with TaskFlow</h1>
+            <p>The smart todo app that helps you stay productive, focused, and achieve your goals every day.</p>
+            <div class="hero-buttons">
+                <a class="btn-primary" href="#">Start Free Trial</a>
+                <a class="btn-secondary" href="#">Watch Demo</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <div class="app-mockup">
+                <div class="mockup-header">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+                <div class="task-item">
+                    <div class="checkbox checked"></div>
+                    <span>Complete project proposal</span>
+                </div>
+                <div class="task-item">
+                    <div class="checkbox checked"></div>
+                    <span>Team meeting at 2 PM</span>
+                </div>
+                <div class="task-item">
+                    <div class="checkbox"></div>
+                    <span>Review quarterly report</span>
+                </div>
+                <div class="task-item">
+                    <div class="checkbox"></div>
+                    <span>Call with client</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features" id="features">
+    <div class="features-container">
+        <h2 class="section-title">Powerful Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>Cross-Platform Sync</h3>
+                <p>Access your tasks anywhere. Seamlessly sync across all your devices in real-time.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Smart Prioritization</h3>
+                <p>AI-powered task prioritization helps you focus on what matters most.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Progress Analytics</h3>
+                <p>Track your productivity with detailed insights and beautiful visualizations.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3>Team Collaboration</h3>
+                <p>Share tasks and projects with your team. Work together seamlessly.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔔</div>
+                <h3>Smart Reminders</h3>
+                <p>Never miss a deadline with intelligent notifications and reminders.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌙</div>
+                <h3>Dark Mode</h3>
+                <p>Easy on the eyes with a beautiful dark theme for night-time productivity.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-it-works" id="how-it-works">
+    <div class="features-container">
+        <h2 class="section-title">How It Works</h2>
+        <div class="steps-container">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Sign Up</h3>
+                <p>Create your free account in seconds. No credit card required.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Add Tasks</h3>
+                <p>Quickly add and organize your tasks with our intuitive interface.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Stay Productive</h3>
+                <p>Track progress, get reminders, and achieve your goals efficiently.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <h2>Ready to Get More Done?</h2>
+    <p>Join thousands of productive people using TaskFlow every day.</p>
+    <a class="btn-primary" href="#">Start Your Free Trial</a>
+</section>
+
+<!-- Footer -->
+<footer>
+    <ul class="footer-links">
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms of Service</a></li>
+        <li><a href="#">Contact</a></li>
+        <li><a href="#">Blog</a></li>
+    </ul>
+    <p>&copy; 2024 TaskFlow. All rights reserved.</p>
+</footer>
+
+<script>
+    // Smooth scrolling for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // Add scroll effect to navigation
+    window.addEventListener('scroll', function () {
+        const nav = document.querySelector('nav');
+        if (window.scrollY > 50) {
+            nav.style.boxShadow = '0 5px 20px rgba(0, 0, 0, 0.1)';
+        } else {
+            nav.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.05)';
+        }
+    });
+
+    // Mobile menu toggle
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navLinks = document.querySelector('.nav-links');
+
+    menuToggle.addEventListener('click', function () {
+        navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
+        navLinks.style.position = 'absolute';
+        navLinks.style.top = '100%';
+        navLinks.style.left = '0';
+        navLinks.style.right = '0';
+        navLinks.style.background = 'white';
+        navLinks.style.flexDirection = 'column';
+        navLinks.style.padding = '2rem';
+        navLinks.style.boxShadow = '0 5px 20px rgba(0, 0, 0, 0.1)';
+    });
+
+    // Intersection Observer for animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.animation = 'fadeInUp 1s ease';
+                entry.target.style.opacity = '1';
+            }
+        });
+    }, observerOptions);
+
+    // Observe feature cards
+    document.querySelectorAll('.feature-card').forEach(card => {
+        card.style.opacity = '0';
+        observer.observe(card);
+    });
+
+    // Observe steps
+    document.querySelectorAll('.step').forEach(step => {
+        step.style.opacity = '0';
+        observer.observe(step);
+    });
+</script>
+</body>
+</html>

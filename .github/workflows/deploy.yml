@@ -1,0 +1,132 @@
+name: Task Flows Pipeline
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+env:
+  APP_NAME: task-flows-app
+
+jobs:
+  tests:
+    env:
+      TZ: Europe/Berlin
+    runs-on: ubuntu-latest
+    name: Tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{hashFiles('**/pom.xml')}}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Running Unit Tests
+        run: |
+          ./mvnw clean test
+
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    name: Build & Deploy
+    needs: tests
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{hashFiles('**/pom.xml')}}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Extract project version
+        id: extract_version
+        run: |
+          echo "VERSION=$(./mvnw -q -Dexec.executable='echo' -Dexec-args='${project.version}' --non-recursive exec:exec)" >> $GITHUB_OUTPUT 
+
+      - name: Build application
+        run: ./mvnw clean package -DskipTests
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          pull: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.APP_NAME }}:latest
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.APP_NAME }}:${{ steps.extract_version.outputs.VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=mas
+          build-args: |
+            PROFILE=dev
+            APP_VERSION=${{ steps.extract_version.outputs.VERSION }}
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          passphrase: ${{ secrets.VPS_SSH_KEY_PASSPHRASE }}
+          script: |
+            # Navigate to app directory
+            cd /opt/${{ env.APP_NAME }} || mkdir -p /opt/${{ env.APP_NAME }} && cd /opt/${{ env.APP_NAME }}
+            
+            # Create .env file from secrets
+            cat > .env << EOF
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            APP_NAME=${{ env.APP_NAME }}
+            DB_URL=postgres-sql-spring-app
+            PG_DB_NAME=${{secrets.PG_DB_NAME}}
+            PG_DB_USERNAME=${{secrets.PG_DB_USERNAME}}
+            PG_DB_PASSWORD=${{secrets.PG_DB_PASSWORD}}
+            EOF
+            
+            rm docker-compose.dev.yml
+            # Download docker-compose.dev.yml if it doesn't exist
+            if [! -f docker-compose.dev.yml ]; then
+              curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -o docker-compose.dev.yml https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/main/docker-compose.dev.yml
+            fi
+            
+            # Pull latest image
+            docker compose -f docker-compose.dev.yml --env-file .env pull
+            
+            # Stop and remove old containers
+            docker compose -f docker-compose.dev.yml --env-file .env down
+            
+            # Start new containers
+            docker compose -f docker-compose.dev.yml --env-file .env up -d
+            
+            # Clean up old images
+            docker image prune -f
