@@ -63,7 +63,7 @@ jobs:
       - name: Extract project version
         id: extract_version
         run: |
-          echo "VERSION=$(./mvnw -q -Dexec.executable='echo' -Dexec-args='${project.version}' --non-recursive exec:exec)" >> $GITHUB_OUTPUT 
+          echo "VERSION=$(./mvnw -q -Dexec.executable='echo' -Dexec.args='${project.version}' --non-recursive exec:exec)" >> $GITHUB_OUTPUT 
 
       - name: Build application
         run: ./mvnw clean package -DskipTests
@@ -84,6 +84,7 @@ jobs:
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/${{ env.APP_NAME }}:latest
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.APP_NAME }}:${{ steps.extract_version.outputs.VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=mas
           build-args: |
